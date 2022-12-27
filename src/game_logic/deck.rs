@@ -1,4 +1,5 @@
-use crate::deck::card::Card;
+use std::ops::{Deref, DerefMut};
+use crate::game_logic::card::Card;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 
@@ -17,14 +18,21 @@ impl Deck {
         }
     }
 
-    pub fn draw(&mut self, nb: u8) -> Vec<Card> {
-        let mut res = Vec::with_capacity(nb as usize);
-        for _ in 0..nb {
-            match self.cards.pop() {
-                Some(card) => res.push(card),
-                None => return res
-            }
-        }
-        res
+    pub fn draw(&mut self) -> Option<Card> {
+        self.cards.pop()
+    }
+}
+
+impl Deref for Deck {
+    type Target = Vec<Card>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.cards
+    }
+}
+
+impl DerefMut for Deck {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.cards
     }
 }
