@@ -9,17 +9,13 @@ pub struct Deck {
 
 impl Deck {
     pub fn new() -> Self {
-        let mut cards = (0..54 as u8)
-            .map(|i| Card(i))
+        let mut cards = (0..=52_u8)
+            .map(Card)
             .collect::<Vec<Card>>();
         cards.shuffle(&mut thread_rng());
         Self {
             cards
         }
-    }
-
-    pub fn draw(&mut self) -> Option<Card> {
-        self.cards.pop()
     }
 }
 

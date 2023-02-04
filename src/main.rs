@@ -1,6 +1,7 @@
 mod commands;
 mod game_logic;
 mod discord_utils;
+mod save;
 
 use serenity::async_trait;
 use serenity::model::application::interaction::{Interaction};
@@ -51,7 +52,12 @@ impl EventHandler for Handler {
 async fn main() {
     dotenv().ok();
     let token = env::var("BOT_TOKEN").expect("Expected a token in the environment");
-    let mut client = Client::builder(token, GatewayIntents::empty())
+
+    let intents = GatewayIntents::GUILD_MESSAGES
+        | GatewayIntents::DIRECT_MESSAGES
+        | GatewayIntents::MESSAGE_CONTENT;
+
+    let mut client = Client::builder(token, intents)
         .event_handler(Handler)
         .await
         .unwrap();

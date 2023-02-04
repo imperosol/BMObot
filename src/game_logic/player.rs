@@ -5,7 +5,7 @@ use crate::game_logic::Deck;
 use crate::game_logic::player::MagicLevel::Veteran;
 use crate::game_logic::player::PromoteError::{AlreadyPromoted, BecomeInsane};
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Copy, Clone, Debug)]
 pub enum MagicLevel {
     Beginner,
     Veteran
@@ -40,7 +40,7 @@ impl Player {
     }
 
     pub fn draw_card(&mut self) -> Option<Card> {
-        let card = self.deck.draw();
+        let card = self.deck.pop();
         if card.is_none() {
             self.is_sane = false;
             println!("Le joueur devient fou");
@@ -60,6 +60,10 @@ impl Player {
         self.hand.push(self.deck.pop().unwrap());
         self.hand.push(self.deck.pop().unwrap());
         Ok(())
+    }
+
+    pub fn set_hand(&mut self, cards: Vec<Card>) {
+        self.hand = cards
     }
 }
 

@@ -25,7 +25,9 @@ pub async fn give_role(ctx: &Context, member: &Member, role_name: &str) {
 pub async fn command_response<T: ToString>(ctx: &Context, command: &ApplicationCommandInteraction, message: T) {
     command.create_interaction_response(
         &ctx.http, |res| res.interaction_response_data(
-            |msg| msg.content(message)
+            |msg| msg.embed(|embed| {
+                embed.description(message)
+            })
         ),
     ).await.unwrap();
 }

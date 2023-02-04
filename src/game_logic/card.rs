@@ -1,5 +1,6 @@
-use std::fmt::{Display, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 
+#[derive(Clone)]
 pub struct Card(pub u8);
 
 impl Display for Card {
@@ -11,6 +12,12 @@ impl Display for Card {
     }
 }
 
+impl Debug for Card {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.to_string().as_str())
+    }
+}
+
 impl Card {
     pub fn figure(&self) -> String {
         if self.0 == 0 {
@@ -18,9 +25,9 @@ impl Card {
         } else {
             match (self.0 - 1) % 13 + 1 {
                 1 => "As".to_string(),
-                10 => "Valet".to_string(),
-                11 => "Dame".to_string(),
-                12 => "Roi".to_string(),
+                11 => "Valet".to_string(),
+                12 => "Dame".to_string(),
+                13 => "Roi".to_string(),
                 n => n.to_string()
             }
         }
@@ -40,8 +47,8 @@ impl Card {
     }
 }
 
-impl Clone for Card {
-    fn clone(&self) -> Self {
-        Card(self.0)
-    }
-}
+// impl Clone for Card {
+//     fn clone(&self) -> Self {
+//         Card(self.0)
+//     }
+// }

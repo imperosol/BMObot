@@ -1,3 +1,4 @@
+use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 
@@ -41,11 +42,11 @@ impl Game {
 
     pub fn add_player(&mut self, discord_user: &User) -> Result<(), &'static str> {
         let id = discord_user.id;
-        if self.players.contains_key(&id) {
-            Err("Le joueur est déjà dans cette partie")
-        } else {
-            self.players.insert(id, Player::new(discord_user));
+        if let Entry::Vacant(e) = self.players.entry(id) {
+            e.insert(Player::new(discord_user));
             Ok(())
+        } else {
+            Err("Le joueur est déjà dans cette partie")
         }
     }
 
@@ -63,15 +64,21 @@ impl Game {
     pub fn player_get_hand(&self, discord_user: &User) -> Result<Option<Vec<Card>>, NotPlayer> {
         match self.players.get(&discord_user.id) {
             Some(player) => {
-                if player.hand.len() == 0 {
-                    Ok(None)
-                } else {
-                    Ok(Some(player.hand
-                        .iter()
-                        .map(|card| card.clone())
-                        .collect()))
+                match player.hand.is_empty() {
+                    true => Ok(None),
+                    false => Ok(Some(player.hand.to_vec()))
                 }
             }
+            None => Err(NotPlayer(discord_user.name.clone()))
+        }
+    }
+
+    pub fn player_set_hand(&mut self, discord_user: &User, cards: Vec<Card>) -> Result<(), NotPlayer> {
+        match self.players.get_mut(&discord_user.id) {
+            Some(player) => {
+                player.set_hand(cards);
+                Ok(())
+            },
             None => Err(NotPlayer(discord_user.name.clone()))
         }
     }

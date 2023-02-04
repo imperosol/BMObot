@@ -5,6 +5,7 @@ use serenity::model::prelude::interaction::application_command::ApplicationComma
 use crate::game_logic::GAME;
 
 pub async fn run(ctx: &Context, command: &ApplicationCommandInteraction) {
+    println!("reset");
     GAME.lock().await.reset();
     command.create_interaction_response(
         &ctx.http, |res| res.interaction_response_data(
