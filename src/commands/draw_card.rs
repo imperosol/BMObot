@@ -1,13 +1,23 @@
-use std::time::Duration;
+use crate::discord_utils::command_response;
+use crate::game_logic::{MagicLevel, GAME};
 use serenity::builder::CreateApplicationCommand;
 use serenity::model::prelude::command::CommandOptionType;
-use serenity::model::prelude::interaction::application_command::{ApplicationCommandInteraction};
+use serenity::model::prelude::interaction::application_command::ApplicationCommandInteraction;
 use serenity::model::user::User;
 use serenity::prelude::{Context, Mentionable};
-use crate::discord_utils::command_response;
-use crate::game_logic::{GAME, MagicLevel};
+/// Commande pour faire tirer une carte à un joueur.
+/// Un joueur doit être dans la partie pour pouvoir tirer une carte.
+///
+/// Si le joueur est un mage débutant, il tirera une carte.
+/// Si le joueur est un mage intermédiaire, il tirera une carte puis choisiras de jouer
+/// cette carte ou bien une carte de sa main.
+use std::time::Duration;
 
-pub async fn draw_card_beginner(user: &User, ctx: &Context, command: &ApplicationCommandInteraction) {
+pub async fn draw_card_beginner(
+    user: &User,
+    ctx: &Context,
+    command: &ApplicationCommandInteraction,
+) {
     let card = GAME.lock().await.player_draw_cards(user);
     let Some(card) = card else {
         command_response(ctx, command, format!("{} n'a plus de cartes", user.name)).await;
@@ -20,34 +30,51 @@ pub async fn draw_card_beginner(user: &User, ctx: &Context, command: &Applicatio
     command_response(ctx, command, msg).await;
 }
 
-pub async fn draw_card_veteran(user: &User, ctx: &Context, command: &ApplicationCommandInteraction) {
+pub async fn draw_card_veteran(
+    user: &User,
+    ctx: &Context,
+    command: &ApplicationCommandInteraction,
+) {
     let Some(card) = GAME.lock().await.player_draw_cards(user) else {
         command_response(ctx, command, format!("{} n'a plus de cartes", user.name)).await;
         return;
     };
-    command.create_interaction_response(&ctx.http, |res| {
-        res.interaction_response_data(|data| {
-            data.ephemeral(true);
-            data.content(format!("{} a une minute pour choisir sa carte", user.name))
+    command
+        .create_interaction_response(&ctx.http, |res| {
+            res.interaction_response_data(|data| {
+                data.ephemeral(true);
+                data.content(format!("{} a une minute pour choisir sa carte", user.name))
+            })
         })
-    }).await.unwrap();
-    let hand = GAME.lock().await.player_get_hand(user).unwrap().unwrap().clone();
-    let card_choice_msg = command.channel_id.send_message(&ctx.http, |msg| {
-        msg.content(format!("{}, choisissez une carte à jouer", user.mention()))
-            .components(|c| {
-                c.create_action_row(|row| {
-                    row.create_select_menu(|menu| {
-                        menu.custom_id("card select");
-                        menu.placeholder("Choisissez une carte");
-                        menu.options(|f| {
-                            f.create_option(|o| o.label(&hand[0]).value("A"));
-                            f.create_option(|o| o.label(&hand[1]).value("B"));
-                            f.create_option(|o| o.label(&card).value("C"))
+        .await
+        .unwrap();
+    let hand = GAME
+        .lock()
+        .await
+        .player_get_hand(user)
+        .unwrap()
+        .unwrap()
+        .clone();
+    let card_choice_msg = command
+        .channel_id
+        .send_message(&ctx.http, |msg| {
+            msg.content(format!("{}, choisissez une carte à jouer", user.mention()))
+                .components(|c| {
+                    c.create_action_row(|row| {
+                        row.create_select_menu(|menu| {
+                            menu.custom_id("card select");
+                            menu.placeholder("Choisissez une carte");
+                            menu.options(|f| {
+                                f.create_option(|o| o.label(&hand[0]).value("A"));
+                                f.create_option(|o| o.label(&hand[1]).value("B"));
+                                f.create_option(|o| o.label(&card).value("C"))
+                            })
                         })
                     })
                 })
-            })
-    }).await.unwrap();
+        })
+        .await
+        .unwrap();
     let Some(interaction) = card_choice_msg
         .await_component_interaction(ctx)
         .timeout(Duration::from_secs(60)).await else {
@@ -57,13 +84,15 @@ pub async fn draw_card_veteran(user: &User, ctx: &Context, command: &Application
     let card_id = &interaction.data.values[0];
     let card = match card_id.as_str() {
         "A" => {
-            GAME.lock().await
+            GAME.lock()
+                .await
                 .player_set_hand(user, vec![hand[1].clone(), card])
                 .unwrap();
             &hand[0]
         }
         "B" => {
-            GAME.lock().await
+            GAME.lock()
+                .await
                 .player_set_hand(user, vec![hand[0].clone(), card])
                 .unwrap();
             &hand[1]
@@ -75,28 +104,40 @@ pub async fn draw_card_veteran(user: &User, ctx: &Context, command: &Application
         }
     };
     card_choice_msg.delete(&ctx.http).await.unwrap();
-    command.channel_id.send_message(&ctx.http, |msg| {
-        msg.add_embed(|embed| {
-            embed.description(format!("{} utilise la carte {}", user.mention(), card))
+    command
+        .channel_id
+        .send_message(&ctx.http, |msg| {
+            msg.add_embed(|embed| {
+                embed.description(format!("{} utilise la carte {}", user.mention(), card))
+            })
         })
-    }).await.unwrap();
+        .await
+        .unwrap();
 }
 
 pub async fn run(ctx: &Context, command: &ApplicationCommandInteraction) {
-    let user = command.data.resolved.members
-        .keys().next().unwrap()
-        .to_user(&ctx.http).await.unwrap();
+    let user = command
+        .data
+        .resolved
+        .members
+        .keys()
+        .next()
+        .unwrap()
+        .to_user(&ctx.http)
+        .await
+        .unwrap();
     let level = match GAME.lock().await.players.get(&user.id) {
         None => {
             command_response(ctx, command, format!("{} n'est pas un joueur", user.name)).await;
             return;
         }
-        Some(player) => player.magic_level
+        Some(player) => player.magic_level,
     };
     match level {
         MagicLevel::Veteran => draw_card_veteran(&user, ctx, command).await,
         MagicLevel::Beginner => draw_card_beginner(&user, ctx, command).await,
     };
+    GAME.lock().await.save_current();
 }
 
 pub fn register(command: &mut CreateApplicationCommand) -> &mut CreateApplicationCommand {

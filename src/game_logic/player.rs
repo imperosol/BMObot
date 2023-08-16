@@ -1,41 +1,43 @@
-use std::fmt::{Display, Formatter};
-use serenity::model::user::User;
 use crate::game_logic::card::Card;
-use crate::game_logic::Deck;
 use crate::game_logic::player::MagicLevel::Veteran;
 use crate::game_logic::player::PromoteError::{AlreadyPromoted, BecomeInsane};
+use rand::prelude::SliceRandom;
+use rand::thread_rng;
+use serde::{Deserialize, Serialize};
+use serenity::model::user::User;
+use std::fmt::{Display, Formatter};
 
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub enum MagicLevel {
     Beginner,
-    Veteran
+    Veteran,
 }
 
 pub enum PromoteError {
     AlreadyPromoted,
-    BecomeInsane
+    BecomeInsane,
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct Player {
-    pub deck: Deck,
+    pub deck: Vec<Card>,
     pub hand: Vec<Card>,
     pub magic_level: MagicLevel,
     pub is_sane: bool,
-    pub discord: User
+    #[serde(skip)]
+    pub discord: User,
 }
 
 impl Player {
     pub fn new(discord_user: &User) -> Self {
-        let deck = Deck::new();
-        for card in deck.iter() {
-            println!("{}", card);
-        }
+        let mut deck = (0..=52_u8).map(Card).collect::<Vec<Card>>();
+        deck.shuffle(&mut thread_rng());
         Player {
             deck,
             hand: Vec::new(),
             magic_level: MagicLevel::Beginner,
             is_sane: true,
-            discord: discord_user.clone()
+            discord: discord_user.clone(),
         }
     }
 
@@ -74,7 +76,7 @@ impl Display for Player {
             self.deck.len(),
             match self.magic_level {
                 MagicLevel::Beginner => "débutant",
-                MagicLevel::Veteran => "intermédiaire"
+                MagicLevel::Veteran => "intermédiaire",
             }
         );
         if self.magic_level == Veteran {

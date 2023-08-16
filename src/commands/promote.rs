@@ -1,14 +1,22 @@
+use crate::discord_utils::command_response;
+use crate::game_logic::{PromoteError, GAME};
+/// Fait passer un joueur de mage débutant à mage intermédiaire.
 use serenity::builder::CreateApplicationCommand;
 use serenity::model::prelude::command::CommandOptionType;
-use serenity::model::prelude::interaction::application_command::{ApplicationCommandInteraction};
+use serenity::model::prelude::interaction::application_command::ApplicationCommandInteraction;
 use serenity::prelude::{Context, Mentionable};
-use crate::discord_utils::command_response;
-use crate::game_logic::{GAME, PromoteError};
 
 pub async fn run(ctx: &Context, command: &ApplicationCommandInteraction) {
-    let user = command.data.resolved.members
-        .keys().next().unwrap()
-        .to_user(&ctx.http).await.unwrap();
+    let user = command
+        .data
+        .resolved
+        .members
+        .keys()
+        .next()
+        .unwrap()
+        .to_user(&ctx.http)
+        .await
+        .unwrap();
     if !GAME.lock().await.player_exists(&user) {
         command_response(ctx, command, format!("{} n'est pas un joueur", user.name)).await;
         return;
@@ -16,10 +24,20 @@ pub async fn run(ctx: &Context, command: &ApplicationCommandInteraction) {
     if let Err(error) = GAME.lock().await.promote_player(&user).unwrap() {
         match error {
             PromoteError::AlreadyPromoted => {
-                command_response(ctx, command, format!("{} est déjà un mage intermédiaire", user.name)).await;
+                command_response(
+                    ctx,
+                    command,
+                    format!("{} est déjà un mage intermédiaire", user.name),
+                )
+                .await;
             }
             PromoteError::BecomeInsane => {
-                command_response(ctx, command, format!("{} n'a plus de cartes et devient fou", user.name)).await;
+                command_response(
+                    ctx,
+                    command,
+                    format!("{} n'a plus de cartes et devient fou", user.name),
+                )
+                .await;
             }
         }
         return;
@@ -34,7 +52,7 @@ pub async fn run(ctx: &Context, command: &ApplicationCommandInteraction) {
         }
     }
     command_response(ctx, command, msg).await;
-
+    GAME.lock().await.save_current();
 }
 
 pub fn register(command: &mut CreateApplicationCommand) -> &mut CreateApplicationCommand {

@@ -1,10 +1,6 @@
-mod deck;
 mod card;
-mod player;
 mod game;
+mod player;
 
-
-pub use deck::Deck;
-pub use game::GAME;
-pub use player::PromoteError;
-pub use player::MagicLevel;
+pub use game::{Game, GAME};
+pub use player::{MagicLevel, Player, PromoteError};

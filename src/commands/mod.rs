@@ -1,5 +1,5 @@
-pub mod new_game;
-pub mod draw_card;
 pub mod add_player;
-pub mod promote;
+pub mod draw_card;
+pub mod new_game;
 pub mod player_infos;
+pub mod promote;

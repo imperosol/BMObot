@@ -1,14 +1,22 @@
+use crate::discord_utils::command_response;
+use crate::game_logic::GAME;
+/// Affiche les infos sur un joueur et les cartes qu'il a en main si c'est un mage intermédiaire.
 use serenity::builder::CreateApplicationCommand;
 use serenity::model::prelude::command::CommandOptionType;
-use serenity::model::prelude::interaction::application_command::{ApplicationCommandInteraction};
-use serenity::prelude::{Context};
-use crate::discord_utils::command_response;
-use crate::game_logic::{GAME};
+use serenity::model::prelude::interaction::application_command::ApplicationCommandInteraction;
+use serenity::prelude::Context;
 
 pub async fn run(ctx: &Context, command: &ApplicationCommandInteraction) {
-    let user = command.data.resolved.members
-        .keys().next().unwrap()
-        .to_user(&ctx.http).await.unwrap();
+    let user = command
+        .data
+        .resolved
+        .members
+        .keys()
+        .next()
+        .unwrap()
+        .to_user(&ctx.http)
+        .await
+        .unwrap();
     if !GAME.lock().await.player_exists(&user) {
         command_response(ctx, command, format!("{} n'est pas un joueur", user.name)).await;
         return;

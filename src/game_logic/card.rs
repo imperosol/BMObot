@@ -1,13 +1,14 @@
+use serde::{Deserialize, Serialize};
 use std::fmt::{Debug, Display, Formatter};
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Card(pub u8);
 
 impl Display for Card {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self.0 {
             0 => write!(f, "Joker"),
-            _ => write!(f, "{} de {}", self.figure(), self.colour().unwrap())
+            _ => write!(f, "{} de {}", self.figure(), self.colour().unwrap()),
         }
     }
 }
@@ -28,7 +29,7 @@ impl Card {
                 11 => "Valet".to_string(),
                 12 => "Dame".to_string(),
                 13 => "Roi".to_string(),
-                n => n.to_string()
+                n => n.to_string(),
             }
         }
     }
@@ -41,14 +42,8 @@ impl Card {
                 0 => Some("coeur"),
                 1 => Some("carreau"),
                 2 => Some("trèfle"),
-                _ => Some("pique")
+                _ => Some("pique"),
             }
         }
     }
 }
-
-// impl Clone for Card {
-//     fn clone(&self) -> Self {
-//         Card(self.0)
-//     }
-// }
